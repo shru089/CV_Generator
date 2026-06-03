@@ -785,6 +785,46 @@ document.getElementById('pdf-btn').addEventListener('click', async () => {
       education: [],
       skills: []
     };
+
+    // Clean all fields in the resume object to prevent WinAnsiEncoding corruptions in jsPDF
+    const cleanUnicode = (str) => {
+      if (!str) return '';
+      return str
+        .replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, '')
+        .replace(/[\u2700-\u27BF]|[\uE000-\uF8FF]|[\u2011-\u26FF]/g, '')
+        .replace(/[^\x00-\x7F]/g, (char) => {
+          const map = {
+            '–': '-', '—': '-', '’': "'", '‘': "'", '“': '"', '”': '"',
+            '•': '*', '·': '*', '…': '...'
+          };
+          return map[char] || '';
+        });
+    };
+
+    resume.name = cleanUnicode(resume.name);
+    resume.contact = cleanUnicode(resume.contact);
+    resume.summary = cleanUnicode(resume.summary);
+    
+    resume.experience.forEach(exp => {
+      exp.title = cleanUnicode(exp.title);
+      exp.bullets = exp.bullets.map(cleanUnicode);
+    });
+    
+    resume.projects.forEach(proj => {
+      proj.title = cleanUnicode(proj.title);
+      proj.bullets = proj.bullets.map(cleanUnicode);
+    });
+    
+    resume.education.forEach(edu => {
+      edu.title = cleanUnicode(edu.title);
+      edu.bullets = edu.bullets.map(cleanUnicode);
+    });
+    
+    resume.skills = resume.skills.map(cleanUnicode);
+    
+    if (coverText) {
+      coverText = cleanUnicode(coverText);
+    }
     
     let y = margin;
     

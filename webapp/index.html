@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Resume Tailor AI — Premium ATS Optimization Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;500;700;800&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css"/>
+  
+  <!-- Local Offline Libraries for MV3 Compliance & Client-Side File I/O -->
+  <script src="lib/jspdf.umd.min.js"></script>
+  <script src="lib/pdf.min.js"></script>
+  <script src="lib/pdf.worker.min.js"></script>
+  <script src="lib/mammoth.browser.min.js"></script>
+  <script src="lib/docx.js"></script>
+</head>
+<body>
+  <div class="app-wrapper">
+    <header class="app-header">
+      <div class="logo-area">
+        <span class="logo-icon">✦</span>
+        <h1>Resume Tailor <span class="gradient-text">AI</span></h1>
+      </div>
+      <p class="subtitle">AI-Powered · Real-Time ATS Optimization</p>
+      
+      <div class="header-actions">
+        <button class="nav-tab active" data-tab="dashboard">Dashboard</button>
+        <button class="nav-tab" data-tab="history">History</button>
+        <button class="nav-tab" data-tab="settings">Settings</button>
+        <button id="theme-toggle-btn" class="theme-toggle-btn" title="Toggle Light/Dark Theme" aria-label="Toggle Light/Dark Theme">☀</button>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <!-- DASHBOARD TAB (SPLIT PANE) -->
+      <div id="tab-dashboard" class="tab-pane active">
+        <div class="dashboard-grid">
+          
+          <!-- LEFT PANEL: INPUTS & SETTINGS -->
+          <div class="panel-left">
+            <!-- STEP 1: RESUME UPLOAD -->
+            <div class="card glass-card">
+              <div class="card-header">
+                <span class="step-num">1</span>
+                <h2>Base Resume</h2>
+              </div>
+              <p class="card-desc">Upload your current resume. We parse text locally in the browser.</p>
+              
+              <!-- Drag and Drop Zone -->
+              <div id="dropzone" class="dropzone">
+                <div class="dropzone-content">
+                  <span class="upload-icon">📤</span>
+                  <p class="dropzone-main-text">Drag & drop your resume file here or <span class="browse-link">browse</span></p>
+                  <p class="dropzone-sub-text">Supports PDF, DOCX, DOC, TXT (Max 10MB)</p>
+                </div>
+                <input type="file" id="file-input" accept=".pdf,.docx,.doc,.txt" class="hidden-file-input" title="Upload Resume File" aria-label="Upload Resume File" />
+              </div>
+              
+              <div id="file-status" class="file-status-bar hidden">
+                <span class="file-icon-type">📄</span>
+                <span id="file-status-name" class="file-name">resume.pdf</span>
+                <span id="file-status-size" class="file-size">(245 KB)</span>
+                <button id="file-remove-btn" class="file-remove-btn" title="Remove File">✕</button>
+              </div>
+
+              <!-- Collapsible Raw Text View/Edit -->
+              <details class="raw-resume-details">
+                <summary>View / Edit Extracted Text</summary>
+                <textarea id="base-resume-text" placeholder="Your resume text will appear here after parsing, or you can paste it manually..." rows="6"></textarea>
+              </details>
+            </div>
+
+            <!-- STEP 2: JOB DESCRIPTION -->
+            <div class="card glass-card">
+              <div class="card-header">
+                <span class="step-num">2</span>
+                <h2>Job Description</h2>
+              </div>
+              <p class="card-desc">Paste the job description of the role you are targeting.</p>
+              
+              <div class="form-group">
+                <textarea id="jd-input" placeholder="Paste the target job description here..." rows="6"></textarea>
+              </div>
+            </div>
+
+            <!-- STEP 3: CUSTOMIZATION -->
+            <div class="card glass-card">
+              <div class="card-header">
+                <span class="step-num">3</span>
+                <h2>Tailoring Options</h2>
+              </div>
+              
+              <div class="options-grid">
+                <div class="form-group">
+                  <label for="output-type-select">Generate Target</label>
+                  <div class="custom-select-wrapper">
+                    <select id="output-type-select" title="Generate Target">
+                      <option value="both">Resume + Cover Letter</option>
+                      <option value="resume">Resume Only</option>
+                      <option value="cover">Cover Letter Only</option>
+                      <option value="bullets">ATS Bullet Points</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="tone-select">Writing Tone</label>
+                  <div class="custom-select-wrapper">
+                    <select id="tone-select" title="Writing Tone">
+                      <option value="confident">Confident & Direct</option>
+                      <option value="enthusiastic">Enthusiastic & Passionate</option>
+                      <option value="formal">Formal & Professional</option>
+                      <option value="concise">Concise & Minimal</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ACTION BUTTON -->
+            <button id="tailor-btn" class="glow-cta-btn">✦ Tailor My Resume</button>
+
+            <div id="loading" class="loading-state hidden">
+              <div class="spinner"></div>
+              <div class="loading-text-container">
+                <span class="loading-main">AI Tailoring & Optimizing...</span>
+                <span class="loading-sub">Integrating keywords & mapping skills</span>
+              </div>
+            </div>
+            
+            <div id="no-resume-warning" class="status-warning hidden">
+              ⚠️ Please load or paste a base resume first.
+            </div>
+          </div>
+
+          <!-- RIGHT PANEL: ATS AUDIT & GENERATED FILES -->
+          <div class="panel-right">
+            <!-- PLACEHOLDER STATE -->
+            <div id="results-placeholder" class="results-placeholder-state">
+              <div class="placeholder-icon">🎛️</div>
+              <h3>ATS Optimization Center</h3>
+              <p>Upload a resume and job description on the left, then click <strong>"Tailor My Resume"</strong> to run the real-time ATS match analyzer and download formatted copies.</p>
+            </div>
+
+            <!-- ACTIVE RESULTS STATE -->
+            <div id="results-container" class="results-active-container hidden">
+              
+              <!-- ATS SCORE CARD -->
+              <div class="card glass-card ats-scorecard">
+                <div class="scorecard-grid">
+                  <div class="score-radial-container">
+                    <div class="score-circle-wrapper">
+                      <svg class="score-svg" viewBox="0 0 100 100">
+                        <circle class="score-circle-bg" cx="50" cy="50" r="40"></circle>
+                        <circle class="score-circle-progress" id="score-ring" cx="50" cy="50" r="40" stroke-dasharray="251.2" stroke-dashoffset="251.2"></circle>
+                      </svg>
+                      <div class="score-number-display">
+                        <span id="score-val" class="score-num">0</span>
+                        <span class="score-max">/10</span>
+                      </div>
+                    </div>
+                    <span class="score-label">ATS Compatibility Score</span>
+                  </div>
+
+                  <div class="ats-status-details">
+                    <h3>ATS Audit Status</h3>
+                    <div class="badge-row">
+                      <span id="ats-badge" class="ats-status-badge">PASS</span>
+                      <span id="match-label" class="match-level-badge">Strong Match</span>
+                    </div>
+                    <p class="ats-summary-text">Based on keyword overlap, role relevancy, and syntax checks.</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- KEYWORD DENSITY AUDIT -->
+              <div class="card glass-card">
+                <div class="card-header">
+                  <h2>Keyword Density Analyzer</h2>
+                </div>
+                <p class="card-desc">We analyzed key terms from the job description. Make sure critical missing keywords are verified.</p>
+                
+                <div class="keyword-cloud-section">
+                  <div class="keyword-legend">
+                    <span class="legend-item"><span class="bullet matched"></span> Matched in Resume</span>
+                    <span class="legend-item"><span class="bullet missing"></span> Missing / Recommendations</span>
+                  </div>
+                  <div id="keyword-cloud" class="keyword-cloud">
+                    <!-- Loaded dynamically -->
+                  </div>
+                </div>
+              </div>
+
+              <!-- OUTPUT DISPLAY TABS -->
+              <div class="card glass-card output-tabs-card">
+                <div class="results-tab-navigation">
+                  <button class="result-tab-btn active" data-rtab="output">Tailored Document</button>
+                  <button class="result-tab-btn" data-rtab="gaps">Gaps & Insights</button>
+                </div>
+
+                <!-- OUTPUT CONTENT TAB -->
+                <div id="rtab-output" class="result-tab-pane active">
+                  <div class="action-toolbar">
+                    <button id="copy-btn" class="toolbar-btn" title="Copy text to clipboard">⎘ Copy Text</button>
+                    <button id="pdf-btn" class="toolbar-btn highlight-btn" title="Download formatted PDF document">↓ PDF Document</button>
+                    <button id="docx-btn" class="toolbar-btn highlight-btn" title="Download editable Word document">↓ Word (.docx)</button>
+                    <button id="save-btn" class="toolbar-btn" title="Save this tailored result to history">★ Save</button>
+                  </div>
+                  <div id="output-text" class="result-display-box" contenteditable="true" title="Click to edit before exporting"></div>
+                  <small class="editor-note">💡 The document above is editable. You can make final adjustments here before downloading.</small>
+                </div>
+
+                <!-- GAPS & INSIGHTS TAB -->
+                <div id="rtab-gaps" class="result-tab-pane">
+                  <div id="gaps-text" class="result-display-box plain-display"></div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- HISTORY TAB -->
+      <div id="tab-history" class="tab-pane">
+        <div class="card glass-card">
+          <div class="card-header space-between">
+            <h2>Application History</h2>
+            <button id="clear-history-btn" class="clear-history-btn">Clear All Records</button>
+          </div>
+          <p class="card-desc">Review your past resume adaptations and scores.</p>
+          <div id="history-list" class="history-list-container">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+      </div>
+
+      <!-- SETTINGS TAB -->
+      <div id="tab-settings" class="tab-pane">
+        <div class="card glass-card">
+          <div class="card-header">
+            <h2>User Preferences & Settings</h2>
+          </div>
+          
+          <div class="settings-form">
+            <div class="form-group">
+              <label for="gemini-api-key">Google Gemini API Key</label>
+              <input type="password" id="gemini-api-key" placeholder="Enter your Google Gemini API Key..." class="form-control-input" />
+              <p class="field-hint">Your API key is stored safely inside your local browser storage. You can get a free key from <a href="https://aistudio.google.com/" target="_blank" rel="noopener">Google AI Studio</a>.</p>
+            </div>
+            
+            <div class="form-group">
+              <label for="template-layout">Template Layout Style</label>
+              <select id="template-layout" class="form-control-input">
+                <option value="modern">Modern Minimalist (Single-Column, clean headings)</option>
+                <option value="classic">Classic Professional (Serif-based, centered header, traditional lines)</option>
+                <option value="split">Creative 2-Column Split (Left sidebar with skills, Right main area)</option>
+              </select>
+              <p class="field-hint">Select the visual layout structure for exported documents.</p>
+            </div>
+
+            <div class="form-group">
+              <label for="template-font">Typography Font Family</label>
+              <select id="template-font" class="form-control-input">
+                <option value="sans">Sans-Serif (Helvetica/Arial - Clean & Modern)</option>
+                <option value="serif">Serif (Times/Georgia - Traditional & Elegant)</option>
+                <option value="monospace">Monospace (Courier - Tech & Engineering)</option>
+              </select>
+              <p class="field-hint">Specify the font typeface family for the generated resume.</p>
+            </div>
+
+            <div class="form-group">
+              <label>Template Accent Color</label>
+              <div class="color-palette-picker">
+                <button type="button" class="color-badge active" data-color="#8879fc" title="Royal Purple"></button>
+                <button type="button" class="color-badge" data-color="#0ea5e9" title="Sky Blue"></button>
+                <button type="button" class="color-badge" data-color="#10b981" title="Emerald Green"></button>
+                <button type="button" class="color-badge" data-color="#f43f5e" title="Rose Pink"></button>
+                <button type="button" class="color-badge" data-color="#334155" title="Slate Gray"></button>
+                <div class="custom-color-input-wrapper">
+                  <input type="color" id="template-color-picker" value="#8879fc" title="Custom color picker" aria-label="Custom Color Picker" />
+                  <span class="custom-color-label">Custom</span>
+                </div>
+              </div>
+              <input type="hidden" id="template-color" value="#8879fc" />
+            </div>
+            
+            <div class="settings-action-row">
+              <button id="save-settings-btn" class="primary-save-btn">Save Settings</button>
+              <button id="test-connection-btn" class="toolbar-btn">Test Connection</button>
+            </div>
+            <div id="settings-saved" class="status-success hidden">✓ Configuration saved successfully!</div>
+            <div id="test-status" class="test-status-msg hidden"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

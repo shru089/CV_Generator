@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Resume Tailor AI</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;500;700;800&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="popup.css"/>
+  
+  <!-- Local Scripts for MV3 Compliance & Client-side PDF/DOCX Parsing/Generating -->
+  <script src="lib/jspdf.umd.min.js"></script>
+  <script src="lib/pdf.min.js"></script>
+  <script src="lib/pdf.worker.min.js"></script>
+  <script src="lib/mammoth.browser.min.js"></script>
+  <script src="lib/docx.js"></script>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">✦</div>
+    <div>
+      <h1>Resume Tailor AI</h1>
+      <p class="sub">AI-Powered · ATS-Friendly</p>
+    </div>
+    <div class="header-actions">
+      <button id="theme-toggle-btn" class="theme-toggle-btn" title="Toggle Light/Dark Theme" aria-label="Toggle Light/Dark Theme">☀</button>
+      <a href="#" id="open-webapp" class="settings-btn" title="Open full dashboard web app">⚙</a>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="tailor">Tailor</button>
+    <button class="tab" data-tab="history">History</button>
+    <button class="tab" data-tab="settings">Settings</button>
+  </div>
+
+  <!-- TAILOR TAB -->
+  <div id="tab-tailor" class="tab-content active">
+    <div class="section-label">Job Description</div>
+    <div class="jd-row">
+      <textarea id="jd-input" placeholder="Paste JD here or click 'Grab from page'..." rows="5"></textarea>
+      <button id="grab-btn" class="grab-btn" title="Auto-grab JD from current page">⚡ Grab from page</button>
+    </div>
+
+    <div class="section-label">Output Type</div>
+    <div class="chip-row" id="output-chips">
+      <button class="chip active" data-val="both">Resume + Cover</button>
+      <button class="chip" data-val="resume">Resume Only</button>
+      <button class="chip" data-val="cover">Cover Only</button>
+      <button class="chip" data-val="bullets">Bullets</button>
+    </div>
+
+    <button id="tailor-btn" class="primary-btn">✦ Tailor my resume</button>
+
+    <div id="loading" class="loading hidden">
+      <div class="dots"><span></span><span></span><span></span></div>
+      <span>Tailoring & optimizing...</span>
+    </div>
+
+    <!-- RESULTS SECTION -->
+    <div id="result-section" class="hidden">
+      <div class="score-row">
+        <div id="score-badge" class="score-badge"></div>
+        <div id="ats-badge" class="ats-badge"></div>
+      </div>
+      
+      <!-- Keyword Match density cloud in extension -->
+      <div class="extension-kw-section">
+        <div class="section-label">ATS Keywords</div>
+        <div id="extension-kw-cloud" class="extension-kw-cloud"></div>
+      </div>
+      
+      <div class="result-tabs">
+        <button class="rtab active" data-rtab="output">Output</button>
+        <button class="rtab" data-rtab="gaps">Gaps</button>
+      </div>
+      <div id="rtab-output" class="rtab-content active">
+        <div id="output-text" class="output-box" contenteditable="true" title="Click to edit before downloading"></div>
+        <div class="action-row">
+          <button id="copy-btn" class="action-btn">⎘ Copy</button>
+          <button id="pdf-btn" class="action-btn">↓ PDF</button>
+          <button id="docx-btn" class="action-btn">↓ Word (.docx)</button>
+          <button id="save-btn" class="action-btn">★ Save</button>
+        </div>
+      </div>
+      <div id="rtab-gaps" class="rtab-content hidden">
+        <div id="gaps-text" class="output-box"></div>
+      </div>
+    </div>
+
+    <div id="no-resume-warning" class="warning hidden">
+      ⚠ No resume saved. Go to <strong>Settings</strong> to upload or paste your resume.
+    </div>
+  </div>
+
+  <!-- HISTORY TAB -->
+  <div id="tab-history" class="tab-content hidden">
+    <div class="section-label">Past Applications</div>
+    <div id="history-list" class="history-list"></div>
+    <button id="clear-history-btn" class="danger-btn">Clear All History</button>
+  </div>
+
+  <!-- SETTINGS TAB -->
+  <div id="tab-settings" class="tab-content hidden">
+    <label for="file-input" class="section-label">Your Base Resume</label>
+    
+    <div class="upload-row">
+      <input type="file" id="file-input" accept=".pdf,.docx,.doc,.txt" class="hidden-file-input" title="Upload Resume File" aria-label="Upload Resume File" />
+      <button id="file-upload-btn" class="upload-file-btn">📤 Upload Resume</button>
+      <span id="file-status-text" class="file-status-text">No file loaded</span>
+    </div>
+    
+    <textarea id="base-resume" placeholder="Or paste your resume text here..." rows="6" class="mt-small" title="Your Base Resume"></textarea>
+
+    <label for="gemini-api-key" class="section-label mt-large">Google Gemini API Key</label>
+    <input type="password" id="gemini-api-key" placeholder="Enter Gemini API key..." class="text-input"/>
+    <p class="hint">Get a free key from https://aistudio.google.com/</p>
+
+    <label for="tone-select" class="section-label mt-med">Tone Preference</label>
+    <select id="tone-select" class="select-input" title="Tone Preference">
+      <option value="confident">Confident & direct</option>
+      <option value="enthusiastic">Enthusiastic & energetic</option>
+      <option value="formal">Formal & professional</option>
+      <option value="concise">Concise & minimal</option>
+    </select>
+
+    <label for="template-layout" class="section-label mt-med">Template Layout Style</label>
+    <select id="template-layout" class="select-input" title="Template Layout Style">
+      <option value="modern">Modern Minimalist</option>
+      <option value="classic">Classic Professional</option>
+      <option value="split">Creative 2-Column Split</option>
+    </select>
+
+    <label for="template-font" class="section-label mt-med">Typography Font</label>
+    <select id="template-font" class="select-input" title="Typography Font">
+      <option value="sans">Sans-Serif (Helvetica)</option>
+      <option value="serif">Serif (Times/Georgia)</option>
+      <option value="monospace">Monospace (Courier)</option>
+    </select>
+
+    <label class="section-label mt-med">Template Accent Color</label>
+    <div class="color-palette-picker">
+      <button type="button" class="color-badge active" data-color="#8879fc" title="Purple"></button>
+      <button type="button" class="color-badge" data-color="#0ea5e9" title="Blue"></button>
+      <button type="button" class="color-badge" data-color="#10b981" title="Green"></button>
+      <button type="button" class="color-badge" data-color="#f43f5e" title="Pink"></button>
+      <button type="button" class="color-badge" data-color="#334155" title="Slate"></button>
+      <div class="custom-color-input-wrapper">
+        <input type="color" id="template-color-picker" value="#8879fc" title="Custom color picker" aria-label="Custom Color Picker" />
+      </div>
+      <input type="hidden" id="template-color" value="#8879fc" />
+    </div>
+
+    <div class="settings-actions">
+      <button id="save-settings-btn" class="primary-btn mt-large">Save Settings</button>
+      <button id="test-connection-btn" class="secondary-btn mt-large">Test Connection</button>
+    </div>
+    <div id="settings-saved" class="success-msg hidden">✓ Settings saved!</div>
+    <div id="test-status" class="test-status-msg hidden"></div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
